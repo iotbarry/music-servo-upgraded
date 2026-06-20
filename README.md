@@ -52,7 +52,20 @@
 ## 文件说明
 
 - `index.html`: 完整网页控制台，包含样式和脚本
+- `firmware/esp32-music-servo/`: ESP32 Arduino 固件
 - `README.md`: 项目说明
+
+## ESP32 固件
+
+固件在 `firmware/esp32-music-servo/esp32-music-servo.ino`。
+
+默认设置：
+
+- 蓝牙名称：`Music Servo ESP32`
+- 舵机信号线：GPIO 18
+- 舵机角度范围：0° 到 180°
+
+接线时请使用独立 5V 电源给舵机供电，并让 ESP32 GND 与舵机电源 GND 共地。不要直接用 ESP32 的 3.3V 给舵机供电。
 
 ## 浏览器要求
 
