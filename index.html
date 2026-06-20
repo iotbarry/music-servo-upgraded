@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音乐律动舵机控制台</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #070a0f;
+  --panel: #10151d;
+  --panel-2: #151c26;
+  --panel-3: #1c2531;
+  --line: #283241;
+  --text: #e7edf7;
+  --muted: #91a0b5;
+  --soft: #5e6b80;
+  --accent: #38bdf8;
+  --accent-2: #22c55e;
+  --warn: #f59e0b;
+  --hot: #fb7185;
+  --purple: #a78bfa;
+  --shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 14% 10%, rgba(56, 189, 248, .16), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(34, 197, 94, .12), transparent 26%),
+    linear-gradient(180deg, #070a0f 0%, #0a0f16 48%, #070a0f 100%);
+  color: var(--text);
+}
+button, input, select { font: inherit; }
+button {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+.app {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 36px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, .95), rgba(34, 197, 94, .92));
+  color: #061019;
+  box-shadow: 0 16px 34px rgba(56, 189, 248, .22);
+}
+.brand h1 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+.brand p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.live {
+  min-width: 136px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid rgba(56, 189, 248, .28);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, .08);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 13px;
+}
+.live span {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--soft);
+}
+.live.active span {
+  background: var(--accent-2);
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, .12);
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+  gap: 16px;
+}
+.stack {
+  display: grid;
+  gap: 16px;
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 21, 29, .88);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(21, 28, 38, .78);
+}
+.panel-title {
+  margin: 0;
+  font-size: 14px;
+  color: #c7d2e4;
+  font-weight: 800;
+}
+.panel-body { padding: 18px; }
+.source-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 14px;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, .55);
+  background: var(--panel-3);
+}
+.btn.primary {
+  background: linear-gradient(135deg, #0284c7, #0891b2);
+  border-color: rgba(56, 189, 248, .55);
+}
+.btn.green {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  border-color: rgba(34, 197, 94, .55);
+}
+.btn.danger {
+  background: linear-gradient(135deg, #be123c, #e11d48);
+  border-color: rgba(251, 113, 133, .58);
+}
+.btn.small {
+  min-height: 32px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.hidden-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.status {
+  min-height: 78px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+.status .label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.status .value {
+  margin-top: 8px;
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.status .value.ok { color: var(--accent-2); }
+.status .value.hot { color: var(--hot); }
+.status .value.accent { color: var(--accent); }
+.meter-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  background: #080c12;
+  border: 1px solid #202a38;
+}
+#spectrumCanvas { height: 172px; }
+#waveCanvas { height: 84px; }
+.bars {
+  display: grid;
+  grid-template-columns: repeat(40, minmax(3px, 1fr));
+  gap: 4px;
+  align-items: end;
+  height: 58px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #080c12;
+  border: 1px solid #202a38;
+}
+.bar {
+  min-height: 4px;
+  border-radius: 2px;
+  background: var(--panel-3);
+  transition: height .05s linear, background .05s linear;
+}
+.servo-view {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+.servo-stage {
+  min-height: 210px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #0b1119, #0c121a);
+}
+#servoSvg {
+  width: 178px;
+  height: 178px;
+}
+.angle-readout {
+  display: grid;
+  gap: 12px;
+}
+.angle-big {
+  font-size: clamp(54px, 8vw, 86px);
+  line-height: .9;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.angle-big small {
+  font-size: .32em;
+  color: var(--muted);
+}
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: #c3cede;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pill::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 9px;
+  background: var(--soft);
+}
+.pill.ok::before { background: var(--accent-2); }
+.pill.hot::before { background: var(--hot); }
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+.control {
+  display: grid;
+  gap: 8px;
+}
+.control label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #c7d2e4;
+  font-size: 13px;
+  font-weight: 800;
+}
+.control output {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.mode {
+  min-height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-weight: 900;
+}
+.mode.active {
+  color: #061019;
+  border-color: rgba(56, 189, 248, .85);
+  background: linear-gradient(135deg, var(--accent), #67e8f9);
+}
+.log {
+  height: 164px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #202a38;
+  background: #06090e;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.log p { margin: 0 0 5px; }
+.log .time { color: #64748b; }
+.log .ok { color: #4ade80; }
+.log .bad { color: #fb7185; }
+.log .info { color: #93a4bb; }
+.log .send { color: #7dd3fc; }
+.hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+@media (max-width: 900px) {
+  .grid, .servo-view { grid-template-columns: 1fr; }
+  .source-row, .status-grid, .control-grid { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .live { min-width: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="27" height="27" viewBox="0 0 24 24" fill="none">
+          <path d="M8 18V6l10-2v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="6" cy="18" r="3" fill="currentColor"/>
+          <circle cx="16" cy="16" r="3" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1>音乐律动舵机控制台</h1>
+        <p>麦克风、电脑声音、本地音乐都能驱动舵机动作</p>
+      </div>
+    </div>
+    <div class="live" id="liveBadge"><span></span><b id="liveText">未监听</b></div>
+  </header>
+
+  <main class="grid">
+    <section class="stack">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">声音输入</h2>
+          <button class="btn small danger" id="btnStopAudio" type="button" disabled>停止监听</button>
+        </div>
+        <div class="panel-body">
+          <div class="source-row">
+            <button class="btn green" id="btnMic" type="button">麦克风</button>
+            <button class="btn primary" id="btnSystem" type="button">电脑/标签页声音</button>
+            <button class="btn" id="btnFilePick" type="button">本地音乐文件</button>
+            <input class="hidden-file" id="fileInput" type="file" accept="audio/*">
+          </div>
+          <p class="hint">读取电脑正在播放的声音时，浏览器会弹出共享窗口。请选择正在播放音乐的标签页或屏幕，并勾选“共享音频”。</p>
+          <div class="status-grid">
+            <div class="status">
+              <div class="label">声音来源</div>
+              <div class="value accent" id="metricSource">未选择</div>
+            </div>
+            <div class="status">
+              <div class="label">音量能量</div>
+              <div class="value ok" id="metricEnergy">0%</div>
+            </div>
+            <div class="status">
+              <div class="label">节拍</div>
+              <div class="value hot" id="metricBpm">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">声音波形</h2>
+          <div class="pill-row">
+            <span class="pill" id="beatPill">等待节拍</span>
+            <span class="pill" id="servoPill">舵机预览</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="meter-wrap">
+            <canvas id="spectrumCanvas"></canvas>
+            <canvas id="waveCanvas"></canvas>
+            <div class="bars" id="beatBars" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">通信日志</h2>
+          <button class="btn small" id="btnClearLog" type="button">清空</button>
+        </div>
+        <div class="panel-body">
+          <div class="log" id="logBox" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="stack">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">蓝牙舵机</h2>
+          <button class="btn small" id="btnTest" type="button" disabled>测试摆动</button>
+        </div>
+        <div class="panel-body">
+          <div class="source-row">
+            <button class="btn primary" id="btnConnect" type="button">连接蓝牙</button>
+            <button class="btn danger" id="btnDisconnect" type="button" disabled>断开</button>
+            <button class="btn" id="btnPreview" type="button">只预览</button>
+          </div>
+          <p class="hint" id="bleHint">支持原页面里的 Nordic UART 蓝牙协议。未连接蓝牙时，页面仍会显示舵机预览。</p>
+          <div class="status-grid">
+            <div class="status">
+              <div class="label">连接状态</div>
+              <div class="value" id="metricBle">未连接</div>
+            </div>
+            <div class="status">
+              <div class="label">已发指令</div>
+              <div class="value accent" id="metricSent">0</div>
+            </div>
+            <div class="status">
+              <div class="label">触发次数</div>
+              <div class="value hot" id="metricBeats">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">舵机预览</h2>
+          <span class="pill ok" id="anglePill">0°</span>
+        </div>
+        <div class="panel-body">
+          <div class="servo-view">
+            <div class="servo-stage">
+              <svg id="servoSvg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="舵机角度预览">
+                <defs>
+                  <linearGradient id="armGrad" x1="0" x2="1">
+                    <stop stop-color="#38bdf8"/>
+                    <stop offset="1" stop-color="#22c55e"/>
+                  </linearGradient>
+                </defs>
+                <path d="M30 143h120a12 12 0 0 1 12 12v8H18v-8a12 12 0 0 1 12-12Z" fill="#151c26" stroke="#283241" stroke-width="2"/>
+                <rect x="52" y="111" width="76" height="44" rx="10" fill="#0f151e" stroke="#283241" stroke-width="2"/>
+                <circle cx="90" cy="111" r="37" fill="#101720" stroke="#2a3646" stroke-width="2"/>
+                <path id="servoArc" d="" fill="none" stroke="rgba(56, 189, 248, .35)" stroke-width="5" stroke-linecap="round"/>
+                <g id="tickMarks"></g>
+                <g id="servoArm" transform="rotate(-90 90 111)">
+                  <rect x="86" y="39" width="8" height="75" rx="4" fill="url(#armGrad)"/>
+                  <circle cx="90" cy="38" r="8" fill="#38bdf8"/>
+                </g>
+                <circle cx="90" cy="111" r="10" fill="#070a0f" stroke="#38bdf8" stroke-width="3"/>
+              </svg>
+            </div>
+            <div class="angle-readout">
+              <div class="angle-big"><span id="angleBig">0</span><small>°</small></div>
+              <div class="pill-row">
+                <span class="pill" id="speedPill">速度 5</span>
+                <span class="pill" id="modePill">节拍模式</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">灵敏度和动作</h2>
+          <button class="btn small" id="btnCalibrate" type="button">重新校准</button>
+        </div>
+        <div class="panel-body">
+          <div class="control-grid">
+            <div class="control">
+              <label for="sensitivity">灵敏度 <output id="outSensitivity">14</output></label>
+              <input id="sensitivity" type="range" min="1" max="20" value="14">
+            </div>
+            <div class="control">
+              <label for="inputGain">输入增强 <output id="outInputGain">3.0x</output></label>
+              <input id="inputGain" type="range" min="1" max="8" value="3" step="0.1">
+            </div>
+            <div class="control">
+              <label for="minAngle">最小角度 <output id="outMinAngle">5°</output></label>
+              <input id="minAngle" type="range" min="0" max="90" value="5">
+            </div>
+            <div class="control">
+              <label for="maxAngle">最大角度 <output id="outMaxAngle">60°</output></label>
+              <input id="maxAngle" type="range" min="10" max="180" value="60">
+            </div>
+            <div class="control">
+              <label for="sendRate">响应速度 <output id="outSendRate">60ms</output></label>
+              <input id="sendRate" type="range" min="35" max="220" value="60">
+            </div>
+            <div class="control">
+              <label for="smoothness">平滑程度 <output id="outSmoothness">24%</output></label>
+              <input id="smoothness" type="range" min="0" max="80" value="24">
+            </div>
+            <div class="control">
+              <label for="noiseGate">噪声门限 <output id="outNoiseGate">25%</output></label>
+              <input id="noiseGate" type="range" min="0" max="80" value="25">
+            </div>
+          </div>
+          <div class="modes" role="group" aria-label="动作模式">
+            <button class="mode active" data-mode="beat" type="button">节拍</button>
+            <button class="mode" data-mode="energy" type="button">音量</button>
+            <button class="mode" data-mode="hybrid" type="button">混合</button>
+          </div>
+          <p class="hint">为了保护舵机，低于“噪声门限”的声音不会发送任何指令。觉得不够灵敏时，先小幅降低门限，再调整“输入增强”和“灵敏度”。</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<video id="captureVideo" class="sr-only" muted playsinline></video>
+
+<script>
+const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+const WRITE_CHAR_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+const SERVO_INDEX = 1;
+const FFT_SIZE = 2048;
+const BARS = 40;
+
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  device: null,
+  writeChar: null,
+  audioCtx: null,
+  analyser: null,
+  inputGainNode: null,
+  sourceNode: null,
+  outputNode: null,
+  activeStream: null,
+  activeAudio: null,
+  fileUrl: null,
+  raf: 0,
+  running: false,
+  sourceName: "未选择",
+  mode: "beat",
+  sent: 0,
+  beats: 0,
+  lastBeat: 0,
+  beatIntervals: [],
+  lastSend: 0,
+  lastAngle: 0,
+  targetAngle: 0,
+  displayedAngle: 0,
+  noiseFloor: 0.025,
+  peakHold: 0.18,
+  bassAvg: 0,
+  bassFast: 0,
+  calibratingUntil: 0
+};
+
+const controls = {
+  sensitivity: $("sensitivity"),
+  inputGain: $("inputGain"),
+  minAngle: $("minAngle"),
+  maxAngle: $("maxAngle"),
+  sendRate: $("sendRate"),
+  smoothness: $("smoothness"),
+  noiseGate: $("noiseGate")
+};
+
+const specCanvas = $("spectrumCanvas");
+const specCtx = specCanvas.getContext("2d");
+const waveCanvas = $("waveCanvas");
+const waveCtx = waveCanvas.getContext("2d");
+const barsRoot = $("beatBars");
+
+for (let i = 0; i < BARS; i++) {
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  barsRoot.appendChild(bar);
+}
+const bars = [...barsRoot.children];
+
+function nowStamp() {
+  return new Date().toTimeString().slice(0, 8);
+}
+
+function log(message, type = "info") {
+  const p = document.createElement("p");
+  p.innerHTML = `<span class="time">[${nowStamp()}]</span> <span class="${type}">${escapeHtml(message)}</span>`;
+  $("logBox").appendChild(p);
+  $("logBox").scrollTop = $("logBox").scrollHeight;
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function resizeCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+  canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+}
+
+function resizeAllCanvases() {
+  resizeCanvas(specCanvas);
+  resizeCanvas(waveCanvas);
+}
+
+window.addEventListener("resize", resizeAllCanvases);
+resizeAllCanvases();
+
+function setupServoSvg() {
+  const g = $("tickMarks");
+  for (let angle = 0; angle <= 180; angle += 15) {
+    const rad = (angle - 180) * Math.PI / 180;
+    const inner = angle % 45 === 0 ? 29 : 32;
+    const outer = 37;
+    const x1 = 90 + Math.cos(rad) * inner;
+    const y1 = 111 + Math.sin(rad) * inner;
+    const x2 = 90 + Math.cos(rad) * outer;
+    const y2 = 111 + Math.sin(rad) * outer;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    line.setAttribute("stroke", angle % 45 === 0 ? "#4b5a70" : "#2a3646");
+    line.setAttribute("stroke-width", angle % 45 === 0 ? "2" : "1.2");
+    g.appendChild(line);
+  }
+  updateServoArc();
+}
+
+function polar(angle, radius = 37) {
+  const rad = (angle - 180) * Math.PI / 180;
+  return {
+    x: 90 + Math.cos(rad) * radius,
+    y: 111 + Math.sin(rad) * radius
+  };
+}
+
+function updateServoArc() {
+  const min = Number(controls.minAngle.value);
+  const max = Number(controls.maxAngle.value);
+  const start = polar(min);
+  const end = polar(max);
+  const large = max - min > 180 ? 1 : 0;
+  $("servoArc").setAttribute("d", `M ${start.x} ${start.y} A 37 37 0 ${large} 1 ${end.x} ${end.y}`);
+}
+
+function setServoPreview(angle) {
+  const min = Number(controls.minAngle.value);
+  const max = Number(controls.maxAngle.value);
+  const clamped = Math.max(0, Math.min(180, angle));
+  state.displayedAngle = clamped;
+  $("servoArm").setAttribute("transform", `rotate(${clamped - 90} 90 111)`);
+  $("angleBig").textContent = Math.round(clamped);
+  $("anglePill").textContent = `${Math.round(clamped)}°`;
+  $("anglePill").classList.toggle("ok", clamped >= min && clamped <= max);
+}
+
+function readSettings() {
+  let minAngle = Number(controls.minAngle.value);
+  let maxAngle = Number(controls.maxAngle.value);
+  if (minAngle >= maxAngle) {
+    if (document.activeElement === controls.minAngle) {
+      maxAngle = Math.min(180, minAngle + 1);
+      controls.maxAngle.value = maxAngle;
+    } else {
+      minAngle = Math.max(0, maxAngle - 1);
+      controls.minAngle.value = minAngle;
+    }
+  }
+  return {
+    sensitivity: Number(controls.sensitivity.value),
+    gain: Number(controls.inputGain.value),
+    minAngle,
+    maxAngle,
+    sendRate: Number(controls.sendRate.value),
+    smoothness: Number(controls.smoothness.value) / 100,
+    noiseGate: Number(controls.noiseGate.value) / 100
+  };
+}
+
+function updateControlLabels() {
+  const s = readSettings();
+  $("outSensitivity").textContent = s.sensitivity;
+  $("outInputGain").textContent = `${s.gain.toFixed(1)}x`;
+  $("outMinAngle").textContent = `${s.minAngle}°`;
+  $("outMaxAngle").textContent = `${s.maxAngle}°`;
+  $("outSendRate").textContent = `${s.sendRate}ms`;
+  $("outSmoothness").textContent = `${Math.round(s.smoothness * 100)}%`;
+  $("outNoiseGate").textContent = `${Math.round(s.noiseGate * 100)}%`;
+  if (state.inputGainNode) state.inputGainNode.gain.value = s.gain;
+  updateServoArc();
+}
+
+Object.values(controls).forEach((input) => input.addEventListener("input", updateControlLabels));
+
+async function connectBle() {
+  if (!navigator.bluetooth) {
+    log("当前浏览器不支持蓝牙，请使用桌面版 Chrome 或 Edge。", "bad");
+    return;
+  }
+  try {
+    $("metricBle").textContent = "扫描中";
+    log("正在扫描蓝牙设备...");
+    state.device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [SERVICE_UUID]
+    });
+    state.device.addEventListener("gattserverdisconnected", onBleDisconnected);
+    const server = await state.device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    state.writeChar = await service.getCharacteristic(WRITE_CHAR_UUID);
+    $("metricBle").textContent = state.device.name || "已连接";
+    $("metricBle").classList.add("ok");
+    $("btnConnect").disabled = true;
+    $("btnDisconnect").disabled = false;
+    $("btnTest").disabled = false;
+    $("servoPill").classList.add("ok");
+    log(`蓝牙连接成功：${state.device.name || "未命名设备"}`, "ok");
+  } catch (error) {
+    $("metricBle").textContent = "未连接";
+    $("metricBle").classList.remove("ok");
+    log(`蓝牙连接失败：${error.message}`, "bad");
+  }
+}
+
+function onBleDisconnected() {
+  state.writeChar = null;
+  $("metricBle").textContent = "已断开";
+  $("metricBle").classList.remove("ok");
+  $("btnConnect").disabled = false;
+  $("btnDisconnect").disabled = true;
+  $("btnTest").disabled = true;
+  $("servoPill").classList.remove("ok");
+  log("蓝牙已断开。", "bad");
+}
+
+function disconnectBle() {
+  if (state.device?.gatt?.connected) state.device.gatt.disconnect();
+  else onBleDisconnected();
+}
+
+async function sendServo(from, to, speed, repeat = 1) {
+  setServoPreview(to);
+  $("speedPill").textContent = `速度 ${speed}`;
+  if (!state.writeChar) return;
+  const cmd = {
+    method: "set_onboard_output",
+    data: [{
+      index: SERVO_INDEX,
+      mode: 3,
+      sia: Math.round(from),
+      sra: Math.round(to),
+      sat: Math.round(speed),
+      rt: Math.max(80, Math.abs(to - from) * speed + 50),
+      rit: 35,
+      rc: repeat,
+      rds: 0
+    }]
+  };
+  try {
+    const bytes = new TextEncoder().encode(JSON.stringify(cmd));
+    await state.writeChar.writeValueWithoutResponse(bytes);
+    state.sent += 1;
+    $("metricSent").textContent = state.sent;
+  } catch (error) {
+    log(`舵机指令发送失败：${error.message}`, "bad");
+  }
+}
+
+function testServo() {
+  const s = readSettings();
+  const middle = Math.round((s.minAngle + s.maxAngle) / 2);
+  sendServo(s.minAngle, middle, 5, 1);
+  setTimeout(() => sendServo(middle, s.maxAngle, 5, 1), 220);
+  setTimeout(() => sendServo(s.maxAngle, s.minAngle, 5, 1), 460);
+  log("已发送测试摆动。", "send");
+}
+
+async function createAudioContext() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) throw new Error("当前浏览器不支持 Web Audio。");
+  const ctx = new AudioCtx({ latencyHint: "interactive" });
+  if (ctx.state === "suspended") await ctx.resume();
+  return ctx;
+}
+
+async function stopAudio(options = {}) {
+  const silent = Boolean(options.silent);
+  state.running = false;
+  cancelAnimationFrame(state.raf);
+  if (state.activeStream) {
+    state.activeStream.getTracks().forEach((track) => track.stop());
+  }
+  if (state.activeAudio) {
+    state.activeAudio.pause();
+    state.activeAudio.removeAttribute("src");
+    state.activeAudio.load();
+  }
+  if (state.fileUrl) URL.revokeObjectURL(state.fileUrl);
+  if (state.audioCtx) await state.audioCtx.close().catch(() => {});
+  $("captureVideo").srcObject = null;
+  state.audioCtx = null;
+  state.analyser = null;
+  state.inputGainNode = null;
+  state.sourceNode = null;
+  state.outputNode = null;
+  state.activeStream = null;
+  state.activeAudio = null;
+  state.fileUrl = null;
+  state.sourceName = "未选择";
+  $("metricSource").textContent = "未选择";
+  $("liveBadge").classList.remove("active");
+  $("liveText").textContent = "未监听";
+  $("btnStopAudio").disabled = true;
+  $("beatPill").classList.remove("hot", "ok");
+  $("beatPill").textContent = "等待节拍";
+  if (!silent) log("已停止监听。");
+}
+
+async function resetAudioGraph(sourceFactory, sourceName, connectToSpeakers = false) {
+  await stopAudio({ silent: true });
+  const ctx = await createAudioContext();
+  const analyser = ctx.createAnalyser();
+  const gain = ctx.createGain();
+  analyser.fftSize = FFT_SIZE;
+  analyser.smoothingTimeConstant = 0.42;
+  gain.gain.value = Number(controls.inputGain.value);
+  const source = await sourceFactory(ctx);
+  source.connect(gain);
+  gain.connect(analyser);
+  if (connectToSpeakers) source.connect(ctx.destination);
+  state.audioCtx = ctx;
+  state.analyser = analyser;
+  state.inputGainNode = gain;
+  state.sourceNode = source;
+  state.running = true;
+  state.sourceName = sourceName;
+  state.lastBeat = 0;
+  state.beatIntervals = [];
+  state.noiseFloor = 0.025;
+  state.peakHold = 0.18;
+  state.bassAvg = 0;
+  state.bassFast = 0;
+  state.calibratingUntil = performance.now() + 1200;
+  $("metricSource").textContent = sourceName;
+  $("liveBadge").classList.add("active");
+  $("liveText").textContent = "监听中";
+  $("btnStopAudio").disabled = false;
+  log(`${sourceName}已开始监听。`, "ok");
+  state.raf = requestAnimationFrame(frame);
+}
+
+async function startMic() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    log("当前浏览器不能读取麦克风。", "bad");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: true,
+        channelCount: 1
+      },
+      video: false
+    });
+    await resetAudioGraph((ctx) => {
+      state.activeStream = stream;
+      return ctx.createMediaStreamSource(stream);
+    }, "麦克风");
+  } catch (error) {
+    log(`麦克风打开失败：${error.message}`, "bad");
+  }
+}
+
+async function startSystemAudio() {
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    log("当前浏览器不能读取电脑声音，请使用桌面版 Chrome 或 Edge。", "bad");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: 2
+      }
+    });
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      stream.getTracks().forEach((track) => track.stop());
+      throw new Error("没有捕获到音频。请重新选择标签页或屏幕，并勾选共享音频。");
+    }
+    await resetAudioGraph(async (ctx) => {
+      state.activeStream = stream;
+      const video = $("captureVideo");
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+      stream.getTracks().forEach((track) => {
+        track.addEventListener("ended", () => {
+          if (state.running && state.activeStream === stream) stopAudio();
+        });
+      });
+      return ctx.createMediaStreamSource(stream);
+    }, "电脑声音");
+  } catch (error) {
+    log(`电脑声音读取失败：${error.message}`, "bad");
+  }
+}
+
+async function startAudioFile(file) {
+  if (!file) return;
+  try {
+    const audio = new Audio();
+    audio.controls = false;
+    audio.loop = true;
+    audio.crossOrigin = "anonymous";
+    const fileUrl = URL.createObjectURL(file);
+    audio.src = fileUrl;
+    await resetAudioGraph((ctx) => {
+      state.fileUrl = fileUrl;
+      state.activeAudio = audio;
+      const source = ctx.createMediaElementSource(audio);
+      audio.play();
+      return source;
+    }, "本地音乐", true);
+    log(`正在播放：${file.name}`, "ok");
+  } catch (error) {
+    log(`本地音乐打开失败：${error.message}`, "bad");
+  }
+}
+
+function rmsFromTime(data) {
+  let sum = 0;
+  for (const value of data) {
+    const n = value / 128 - 1;
+    sum += n * n;
+  }
+  return Math.sqrt(sum / data.length);
+}
+
+function bandEnergy(freq, lowHz, highHz) {
+  if (!state.audioCtx || !state.analyser) return 0;
+  const hzPerBin = state.audioCtx.sampleRate / state.analyser.fftSize;
+  const start = Math.max(0, Math.floor(lowHz / hzPerBin));
+  const end = Math.min(freq.length - 1, Math.ceil(highHz / hzPerBin));
+  let sum = 0;
+  let count = 0;
+  for (let i = start; i <= end; i++) {
+    sum += freq[i] / 255;
+    count += 1;
+  }
+  return count ? sum / count : 0;
+}
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function updateAdaptiveRange(energy) {
+  const now = performance.now();
+  const floorSpeed = now < state.calibratingUntil ? 0.22 : 0.018;
+  state.noiseFloor += (energy - state.noiseFloor) * (energy < state.noiseFloor ? 0.18 : floorSpeed);
+  state.peakHold = Math.max(energy, state.peakHold * 0.985);
+  if (state.peakHold - state.noiseFloor < 0.08) {
+    state.peakHold = state.noiseFloor + 0.08;
+  }
+}
+
+function estimateBpm(interval) {
+  if (interval > 230 && interval < 1800) {
+    state.beatIntervals.push(interval);
+    if (state.beatIntervals.length > 10) state.beatIntervals.shift();
+  }
+  if (state.beatIntervals.length < 2) return null;
+  const sorted = [...state.beatIntervals].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  return Math.round(60000 / median);
+}
+
+function triggerBeat(strength, normEnergy) {
+  const settings = readSettings();
+  const now = performance.now();
+  const interval = state.lastBeat ? now - state.lastBeat : 0;
+  state.lastBeat = now;
+  state.beats += 1;
+  $("metricBeats").textContent = state.beats;
+  const bpm = estimateBpm(interval);
+  $("metricBpm").textContent = bpm ? `${bpm}` : "--";
+  $("beatPill").classList.add("hot");
+  $("beatPill").textContent = "检测到节拍";
+  setTimeout(() => {
+    $("beatPill").classList.remove("hot");
+    $("beatPill").textContent = "监听节拍";
+  }, 120);
+
+  const span = settings.maxAngle - settings.minAngle;
+  const energetic = clamp01(normEnergy * .7 + strength * .3);
+  let target = settings.minAngle + span * energetic;
+  if (state.mode === "beat") {
+    target = settings.minAngle + span * Math.max(.28, energetic);
+  }
+  const speed = bpm ? Math.max(2, Math.round(18 - Math.min(220, bpm) / 18)) : 7;
+  if (now - state.lastSend >= settings.sendRate) {
+    state.lastSend = now;
+    log(`节拍触发：${Math.round(target)}°`, "send");
+    sendServo(settings.minAngle, target, speed, 1);
+  }
+}
+
+function computeTarget(freq, time) {
+  const settings = readSettings();
+  const bass = bandEnergy(freq, 35, 180);
+  const lowMid = bandEnergy(freq, 180, 650);
+  const mid = bandEnergy(freq, 650, 2400);
+  const rms = rmsFromTime(time);
+  const weighted = clamp01(bass * .55 + lowMid * .22 + mid * .08 + rms * .65);
+  updateAdaptiveRange(weighted);
+  const normalized = clamp01((weighted - state.noiseFloor) / (state.peakHold - state.noiseFloor));
+  state.bassAvg += (bass - state.bassAvg) * 0.045;
+  state.bassFast += (bass - state.bassFast) * 0.42;
+  const onset = Math.max(0, state.bassFast - state.bassAvg);
+  const sens01 = settings.sensitivity / 20;
+  const threshold = 0.05 + (1 - sens01) * 0.2;
+  const minGap = 115 + (1 - sens01) * 130;
+  const now = performance.now();
+  const beatStrength = clamp01(onset / Math.max(0.035, threshold));
+  if (normalized < settings.noiseGate) {
+    $("beatPill").classList.remove("hot", "ok");
+    $("beatPill").textContent = "低于噪声门限";
+    state.targetAngle += (settings.minAngle - state.targetAngle) * 0.12;
+    setServoPreview(state.targetAngle);
+    return { bass, lowMid, mid, rms, weighted, normalized, beatStrength: 0, gated: true };
+  }
+  if (state.mode !== "energy" && now > state.calibratingUntil && onset > threshold && now - state.lastBeat > minGap && normalized > 0.08) {
+    triggerBeat(beatStrength, normalized);
+  }
+
+  let target01 = normalized;
+  if (state.mode === "beat") {
+    target01 = Math.max(state.targetAngle > settings.minAngle + 1 ? .08 : 0, normalized * .32);
+  } else if (state.mode === "hybrid") {
+    target01 = clamp01(normalized * .58 + beatStrength * .42);
+  }
+  const rawTarget = settings.minAngle + (settings.maxAngle - settings.minAngle) * target01;
+  state.targetAngle += (rawTarget - state.targetAngle) * (1 - settings.smoothness);
+  if (state.mode !== "beat" && now - state.lastSend >= settings.sendRate) {
+    state.lastSend = now;
+    const delta = Math.abs(state.targetAngle - state.lastAngle);
+    if (delta >= 1.5 || normalized > .42) {
+      const speed = Math.max(2, Math.round(10 - normalized * 6));
+      sendServo(state.lastAngle, state.targetAngle, speed, 1);
+      state.lastAngle = state.targetAngle;
+    }
+  } else {
+    setServoPreview(state.targetAngle);
+  }
+  return { bass, lowMid, mid, rms, weighted, normalized, beatStrength };
+}
+
+function drawSpectrum(freq) {
+  const w = specCanvas.width;
+  const h = specCanvas.height;
+  specCtx.clearRect(0, 0, w, h);
+  const cols = 96;
+  const barW = w / cols;
+  for (let i = 0; i < cols; i++) {
+    const idx = Math.floor(Math.pow(i / cols, 1.8) * (freq.length - 1));
+    const v = freq[idx] / 255;
+    const bh = Math.max(2, v * h);
+    const hue = 195 - i * .75 + v * 36;
+    specCtx.fillStyle = `hsl(${hue}, 84%, ${42 + v * 28}%)`;
+    specCtx.fillRect(i * barW, h - bh, Math.max(1, barW - 2), bh);
+  }
+  specCtx.fillStyle = "rgba(145,160,181,.7)";
+  specCtx.font = `${12 * (window.devicePixelRatio || 1)}px Inter, sans-serif`;
+  specCtx.fillText(state.sourceName, 12 * (window.devicePixelRatio || 1), 22 * (window.devicePixelRatio || 1));
+}
+
+function drawWave(time) {
+  const w = waveCanvas.width;
+  const h = waveCanvas.height;
+  waveCtx.clearRect(0, 0, w, h);
+  waveCtx.beginPath();
+  waveCtx.strokeStyle = "rgba(56, 189, 248, .86)";
+  waveCtx.lineWidth = 2 * (window.devicePixelRatio || 1);
+  const step = w / time.length;
+  for (let i = 0; i < time.length; i++) {
+    const y = (time[i] / 255) * h;
+    const x = i * step;
+    if (i === 0) waveCtx.moveTo(x, y);
+    else waveCtx.lineTo(x, y);
+  }
+  waveCtx.stroke();
+}
+
+function drawBars(freq) {
+  const step = Math.max(1, Math.floor(freq.length / BARS));
+  for (let i = 0; i < BARS; i++) {
+    let sum = 0;
+    for (let j = 0; j < step; j++) sum += freq[i * step + j] || 0;
+    const v = sum / step / 255;
+    bars[i].style.height = `${Math.max(4, v * 52)}px`;
+    bars[i].style.background = `hsl(${190 - i * .9}, 82%, ${36 + v * 34}%)`;
+  }
+}
+
+function frame() {
+  if (!state.running || !state.analyser) return;
+  const freq = new Uint8Array(state.analyser.frequencyBinCount);
+  const time = new Uint8Array(state.analyser.fftSize);
+  state.analyser.getByteFrequencyData(freq);
+  state.analyser.getByteTimeDomainData(time);
+  const info = computeTarget(freq, time);
+  $("metricEnergy").textContent = `${Math.round(info.normalized * 100)}%`;
+  drawSpectrum(freq);
+  drawWave(time);
+  drawBars(freq);
+  state.raf = requestAnimationFrame(frame);
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll(".mode").forEach((btn) => btn.classList.toggle("active", btn.dataset.mode === mode));
+  const names = { beat: "节拍模式", energy: "音量模式", hybrid: "混合模式" };
+  $("modePill").textContent = names[mode];
+  log(`已切换到${names[mode]}。`);
+}
+
+function recalibrate() {
+  state.noiseFloor = 0.025;
+  state.peakHold = 0.18;
+  state.bassAvg = 0;
+  state.bassFast = 0;
+  state.calibratingUntil = performance.now() + 1500;
+  log("正在重新校准环境底噪。", "ok");
+}
+
+$("btnConnect").addEventListener("click", connectBle);
+$("btnDisconnect").addEventListener("click", disconnectBle);
+$("btnTest").addEventListener("click", testServo);
+$("btnPreview").addEventListener("click", () => {
+  const s = readSettings();
+  const next = Math.abs(state.displayedAngle - s.minAngle) < 3 ? s.maxAngle : s.minAngle;
+  sendServo(state.displayedAngle, next, 6, 1);
+});
+$("btnMic").addEventListener("click", startMic);
+$("btnSystem").addEventListener("click", startSystemAudio);
+$("btnStopAudio").addEventListener("click", stopAudio);
+$("btnFilePick").addEventListener("click", () => $("fileInput").click());
+$("fileInput").addEventListener("change", (event) => startAudioFile(event.target.files[0]));
+$("btnClearLog").addEventListener("click", () => $("logBox").innerHTML = "");
+$("btnCalibrate").addEventListener("click", recalibrate);
+document.querySelectorAll(".mode").forEach((btn) => btn.addEventListener("click", () => setMode(btn.dataset.mode)));
+
+setupServoSvg();
+updateControlLabels();
+setServoPreview(0);
+log("页面已就绪。先选择声音来源，再连接蓝牙舵机。", "ok");
+log("电脑声音功能需要桌面版 Chrome 或 Edge，并在共享窗口里勾选共享音频。");
+</script>
+</body>
+</html>
