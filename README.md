@@ -53,6 +53,7 @@
 
 - `index.html`: 完整网页控制台，包含样式和脚本
 - `firmware/esp32-music-servo/`: ESP32 Arduino 固件
+- `android-app/`: 安卓 App 工程，用手机麦克风直接控制 ESP32 舵机
 - `README.md`: 项目说明
 
 ## ESP32 固件
@@ -72,6 +73,12 @@
 - 桌面版 Chrome 或 Edge
 - 需要支持 Web Bluetooth
 - 需要允许麦克风或屏幕/标签页音频权限
+
+## 安卓 APK
+
+安卓工程在 `android-app/`。它可以监听手机麦克风，并通过蓝牙向 ESP32 发送和网页一致的舵机律动指令。
+
+仓库里包含 GitHub Actions 配置，可以在 GitHub 上自动构建 debug APK。
 
 ## 项目描述
 
