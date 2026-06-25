@@ -13,7 +13,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -351,8 +350,6 @@ public class MainActivity extends Activity {
             return;
         }
 
-        List<ScanFilter> filters = new ArrayList<>();
-        filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(SERVICE_UUID)).build());
         ScanSettings settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
@@ -360,7 +357,7 @@ public class MainActivity extends Activity {
         scanning = true;
         setStatus("正在扫描开发板");
         connectButton.setText("扫描中");
-        scanner.startScan(filters, settings, scanCallback);
+        scanner.startScan(null, settings, scanCallback);
         mainHandler.postDelayed(() -> {
             if (scanning) {
                 stopScan();
