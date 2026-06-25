@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
         public void onScanResult(int callbackType, ScanResult result) {
             BluetoothDevice device = result.getDevice();
             String name = getDeviceName(device);
-            if (TextUtils.isEmpty(name) || name.contains("Music Servo") || resultMatchesService(result)) {
+            if (isTargetDeviceName(name) || resultMatchesService(result)) {
                 stopScan();
                 connectDevice(device);
             }
@@ -404,6 +404,11 @@ public class MainActivity extends Activity {
         return result.getScanRecord() != null
                 && result.getScanRecord().getServiceUuids() != null
                 && result.getScanRecord().getServiceUuids().contains(new ParcelUuid(SERVICE_UUID));
+    }
+
+    private boolean isTargetDeviceName(String name) {
+        if (TextUtils.isEmpty(name)) return false;
+        return name.contains("Music Servo") || name.startsWith("直播-");
     }
 
     @SuppressLint("MissingPermission")
